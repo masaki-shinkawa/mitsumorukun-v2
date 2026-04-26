@@ -157,6 +157,8 @@ pnpm dlx shadcn@latest add <component>     # 例: pnpm dlx shadcn@latest add car
 - ユーザーは社内チーム共有を想定するため、Phase 2 で Google SSO を導入する設計余地を残す（プロジェクト/要件にオーナー列を持たせる等）。
 - 抽出根拠（原文の引用箇所）を要件レコードに保持し、後で監査可能にする。
 - 大規模ドキュメントはチャンク分割 → `gpt-4o-mini` で要約 → `gpt-4o` で構造化抽出、の二段構成。
+- **POC のデータ層**: Postgres / MinIO 接続前は、`features/*/api/*-repository.ts` にプロセスメモリ Map を置く。後で同インタフェースのまま DB アダプタへ差し替える（プロセス再起動でデータ消失する点に注意）。
+- **shadcn Button の `asChild` 非対応**: 現在の base-nova スタイルは `@base-ui/react/button` ベースで `asChild` プロパティを持たない。ボタンとして表示したいリンクは `<Link className={buttonVariants({ variant: ... })}>` パターンで対応する。
 
 ## ドキュメント運用ルール（Claude 向け）
 
