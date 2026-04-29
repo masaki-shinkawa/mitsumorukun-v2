@@ -8,12 +8,9 @@ import {
   createExtractionRun,
   hasRunningExtractionRun,
   abandonStaleRuns,
-  listExtractionRuns,
-  getRequirements,
 } from "./extraction-repository";
 import { runExtractionJob } from "./extraction-job";
 import type { Granularity } from "@/generated/prisma/enums";
-import type { ExtractionRun, Requirement } from "./extraction-repository";
 
 const startSchema = z.object({
   projectId: z.string().uuid(),
@@ -103,17 +100,3 @@ export async function startExtractionAction(
   return { ok: true, runId: run.id };
 }
 
-export async function getExtractionRunsAction(
-  projectId: string,
-): Promise<ExtractionRun[]> {
-  const id = z.string().uuid().parse(projectId);
-  return listExtractionRuns(id);
-}
-
-export async function getRequirementsAction(
-  projectId: string,
-  granularity: Granularity,
-): Promise<Requirement[]> {
-  const id = z.string().uuid().parse(projectId);
-  return getRequirements(id, granularity);
-}

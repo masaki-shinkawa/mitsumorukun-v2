@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -10,17 +11,32 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  startExtractionAction,
-  getExtractionRunsAction,
-  getRequirementsAction,
-} from "../api/actions";
 import type { ExtractionRun, Requirement } from "../api/extraction-repository";
 import type { Granularity } from "@/generated/prisma/enums";
 
-type Props = {
-  projectId: string;
-};
+type Props = { projectId: string };
+
+type ExtractionData = { runs: ExtractionRun[]; requirements: Requirement[] };
+
+async function fetchExtraction(projectId: string, granularity: Granularity): Promise<ExtractionData> {
+  const res = await fetch(`/api/projects/${projectId}/extraction?granularity=${granularity}`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function startExtraction(
+  projectId: string,
+  granularity: Granularity,
+): Promise<ExtractionData & { runId: string }> {
+  const res = await fetch(`/api/projects/${projectId}/extraction`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ granularity }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? res.statusText);
+  return data;
+}
 
 const CATEGORY_LABEL: Record<string, string> = {
   functional: "機能",
@@ -44,11 +60,7 @@ const PRIORITY_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
   unknown: "outline",
 };
 
-const CONFIDENCE_LABEL: Record<string, string> = {
-  high: "高",
-  medium: "中",
-  low: "低",
-};
+const CONFIDENCE_LABEL: Record<string, string> = { high: "高", medium: "中", low: "低" };
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
@@ -200,7 +212,6 @@ function RequirementList({
     );
   }
 
-  // group by category
   const grouped: Record<string, Requirement[]> = {};
   for (const req of filtered) {
     if (!grouped[req.category]) grouped[req.category] = [];
@@ -225,75 +236,66 @@ function RequirementList({
 
 export function ExtractionPanel({ projectId }: Props) {
   const [activeGranularity, setActiveGranularity] = useState<Granularity>("rough");
-  const [runs, setRuns] = useState<ExtractionRun[]>([]);
-  const [requirements, setRequirements] = useState<Requirement[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const [errorOpen, setErrorOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(
-    (granularity: Granularity) => {
-      startTransition(async () => {
-        const [runsData, reqsData] = await Promise.all([
-          getExtractionRunsAction(projectId),
-          getRequirementsAction(projectId, granularity),
-        ]);
-        setRuns(runsData);
-        setRequirements(reqsData);
-        setLoaded(true);
+  const queryKey = ["extraction", projectId, activeGranularity] as const;
+
+  const { data, isFetching } = useQuery({
+    queryKey,
+    queryFn: () => fetchExtraction(projectId, activeGranularity),
+  });
+
+  const countFor = (g: Granularity) => {
+    const cached =
+      g === "rough"
+        ? queryClient.getQueryData<ExtractionData>(["extraction", projectId, "rough"])
+        : queryClient.getQueryData<ExtractionData>(["extraction", projectId, "detail"]);
+    return cached?.requirements.filter((r) => r.granularity === g).length ?? 0;
+  };
+
+  const mutation = useMutation({
+    mutationFn: (granularity: Granularity) => startExtraction(projectId, granularity),
+    onSuccess: (result, granularity) => {
+      // update both runs and requirements for the executed granularity
+      queryClient.setQueryData(["extraction", projectId, granularity], {
+        runs: result.runs,
+        requirements: result.requirements,
       });
+      setActiveGranularity(granularity);
     },
-    [projectId],
-  );
+  });
 
-  // initial load
-  if (!loaded && !isPending) {
-    load(activeGranularity);
-  }
+  const handleStart = (granularity: Granularity) => {
+    mutation.mutate(granularity);
+  };
 
   const handleGranularityChange = (g: Granularity) => {
     setActiveGranularity(g);
-    load(g);
   };
 
-  const handleStart = (granularity: Granularity) => {
-    startTransition(async () => {
-      const result = await startExtractionAction(projectId, granularity);
-      if (!result.ok) {
-        alert(result.error);
-        return;
-      }
-      // reload after extraction completes
-      await Promise.all([
-        getExtractionRunsAction(projectId).then(setRuns),
-        getRequirementsAction(projectId, granularity).then(setRequirements),
-      ]);
-      setActiveGranularity(granularity);
-    });
-  };
-
+  const runs = data?.runs ?? [];
+  const requirements = data?.requirements ?? [];
   const latestRun = runs.find((r) => r.granularity === activeGranularity);
   const latestFailed = latestRun?.status === "failed" ? latestRun : null;
+  const isRunning = mutation.isPending;
 
   return (
     <div className="space-y-4">
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
-        <Button
-          variant="default"
-          disabled={isPending}
-          onClick={() => handleStart("rough")}
-        >
-          {isPending ? "実行中…" : "概算抽出を実行"}
+        <Button variant="default" disabled={isRunning} onClick={() => handleStart("rough")}>
+          {isRunning && mutation.variables === "rough" ? "実行中…" : "概算抽出を実行"}
         </Button>
-        <Button
-          variant="outline"
-          disabled={isPending}
-          onClick={() => handleStart("detail")}
-        >
-          {isPending ? "実行中…" : "詳細抽出を実行"}
+        <Button variant="outline" disabled={isRunning} onClick={() => handleStart("detail")}>
+          {isRunning && mutation.variables === "detail" ? "実行中…" : "詳細抽出を実行"}
         </Button>
       </div>
+
+      {/* mutation error */}
+      {mutation.isError && (
+        <p className="text-sm text-destructive">{mutation.error.message}</p>
+      )}
 
       {/* Latest run status */}
       {latestRun && (
@@ -316,8 +318,7 @@ export function ExtractionPanel({ projectId }: Props) {
         <Alert variant="destructive">
           <AlertTitle className="flex items-center justify-between">
             <span>
-              抽出失敗 ·{" "}
-              {new Date(latestFailed.startedAt).toLocaleString("ja-JP")} ·{" "}
+              抽出失敗 · {new Date(latestFailed.startedAt).toLocaleString("ja-JP")} ·{" "}
               {latestFailed.model}
             </span>
             <Button
@@ -325,7 +326,7 @@ export function ExtractionPanel({ projectId }: Props) {
               size="sm"
               className="ml-2"
               onClick={() => handleStart(activeGranularity)}
-              disabled={isPending}
+              disabled={isRunning}
             >
               再実行
             </Button>
@@ -350,30 +351,28 @@ export function ExtractionPanel({ projectId }: Props) {
 
       {/* Granularity tabs */}
       <div className="flex gap-2">
-        {(["rough", "detail"] as Granularity[]).map((g) => (
-          <button
-            key={g}
-            type="button"
-            onClick={() => handleGranularityChange(g)}
-            className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
-              activeGranularity === g
-                ? "bg-primary text-primary-foreground border-primary"
-                : "hover:bg-muted border-border"
-            }`}
-          >
-            {g === "rough" ? "概算" : "詳細"}
-            {(() => {
-              const count = requirements.filter((r) => r.granularity === g).length;
-              return count > 0 ? (
-                <span className="ml-1.5 text-xs opacity-70">{count}</span>
-              ) : null;
-            })()}
-          </button>
-        ))}
+        {(["rough", "detail"] as Granularity[]).map((g) => {
+          const count = countFor(g);
+          return (
+            <button
+              key={g}
+              type="button"
+              onClick={() => handleGranularityChange(g)}
+              className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                activeGranularity === g
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "hover:bg-muted border-border"
+              }`}
+            >
+              {g === "rough" ? "概算" : "詳細"}
+              {count > 0 && <span className="ml-1.5 text-xs opacity-70">{count}</span>}
+            </button>
+          );
+        })}
       </div>
 
       {/* Requirements list */}
-      {isPending && !loaded ? (
+      {isFetching && requirements.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4">読み込み中…</p>
       ) : (
         <RequirementList requirements={requirements} granularity={activeGranularity} />
