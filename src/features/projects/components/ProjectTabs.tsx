@@ -19,6 +19,7 @@ export function ProjectTabs({ projectId, documents }: Props) {
         <TabsTrigger value="settings">プロジェクト設定</TabsTrigger>
         <TabsTrigger value="estimate-rough">概算見積もり</TabsTrigger>
         <TabsTrigger value="estimate-detail">詳細見積もり</TabsTrigger>
+        <TabsTrigger value="qa">QA</TabsTrigger>
       </TabsList>
 
       <TabsContent value="files" className="mt-4 space-y-3">
@@ -40,6 +41,10 @@ export function ProjectTabs({ projectId, documents }: Props) {
 
       <TabsContent value="estimate-detail" className="mt-4">
         <p className="text-sm text-muted-foreground">詳細見積もり（準備中）</p>
+      </TabsContent>
+
+      <TabsContent value="qa" className="mt-4">
+        <p className="text-sm text-muted-foreground">QA（準備中）</p>
       </TabsContent>
     </Tabs>
   );
