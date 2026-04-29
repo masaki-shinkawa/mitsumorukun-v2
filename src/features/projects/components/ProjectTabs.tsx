@@ -15,6 +15,7 @@ export function ProjectTabs({ projectId, documents }: Props) {
     <Tabs defaultValue="files">
       <TabsList>
         <TabsTrigger value="files">ファイル</TabsTrigger>
+        <TabsTrigger value="extraction">要件抽出</TabsTrigger>
         <TabsTrigger value="settings">プロジェクト設定</TabsTrigger>
         <TabsTrigger value="estimate-rough">概算見積もり</TabsTrigger>
         <TabsTrigger value="estimate-detail">詳細見積もり</TabsTrigger>
@@ -23,6 +24,10 @@ export function ProjectTabs({ projectId, documents }: Props) {
       <TabsContent value="files" className="mt-4 space-y-3">
         <DocumentUploader projectId={projectId} />
         <DocumentList projectId={projectId} documents={documents} />
+      </TabsContent>
+
+      <TabsContent value="extraction" className="mt-4">
+        <p className="text-sm text-muted-foreground">要件抽出（準備中）</p>
       </TabsContent>
 
       <TabsContent value="settings" className="mt-4">
