@@ -74,7 +74,7 @@ mitsumorukun2/
 ├─ components.json         # shadcn 設定
 ├─ next.config.ts
 ├─ tsconfig.json
-├─ docker-compose.yml      # Postgres + MinIO（未作成）
+├─ docker-compose.yml      # Postgres + MinIO（Next.js はホストで実行）
 └─ .env.example
 ```
 
@@ -141,15 +141,53 @@ bulletproof-react の `import/no-restricted-paths` 規約に準拠する。
 ## 開発コマンド
 
 ```bash
-pnpm install          # 依存インストール
-pnpm dev              # 開発サーバ起動（既定 http://localhost:3000、ポート使用中なら自動シフト）
-pnpm build            # 本番ビルド
-pnpm start            # 本番サーバ起動
-pnpm lint             # ESLint 実行
+pnpm install            # 依存インストール
+pnpm dev                # Next.js 開発サーバのみ起動（DB/MinIO は別途）
+pnpm dev:full           # docker compose up -d した上で Next.js dev サーバを起動
+pnpm stop               # FRONTEND_PORT (既定 3000) を握っているプロセスを停止
+pnpm restart            # stop → install → dev:full（package.json 変更時の安全な再起動）
+pnpm build              # 本番ビルド
+pnpm start              # 本番サーバ起動
+pnpm lint               # ESLint 実行
+
+# Docker サービス（Postgres + MinIO）
+pnpm services:up        # 起動
+pnpm services:down      # 停止
+pnpm services:logs      # ログ追従
+pnpm services:ps        # 状態確認
+pnpm services:clean     # 停止 + ボリューム削除（破壊的）
 
 # shadcn コンポーネント追加
 pnpm dlx shadcn@latest add <component>     # 例: pnpm dlx shadcn@latest add card input
 ```
+
+## Docker 運用
+
+- 開発時は **Next.js はホストで `pnpm dev`、Postgres と MinIO だけ Docker で動かす** 構成。Windows/macOS の Docker bind mount で HMR が遅くなるのを避けるため（[Next.js 公式ガイド](https://github.com/vercel/next.js/blob/v16.2.2/docs/01-app/02-guides/local-development.mdx) §8 参照）。
+- エントリポイントは `package.json` の scripts に集約（Make は使わない＝Windows でも追加インストール不要）：
+  - `pnpm services:up` / `services:down` / `services:logs` / `services:ps` — docker compose 操作
+  - `pnpm dev` — Next.js のみ（DB/MinIO は別途起動済み前提）
+  - `pnpm dev:full` — `services:up` 後に `next dev`（DB/MinIO ごとまとめて立ち上げ）
+  - `pnpm services:clean` — `docker compose down -v`（**ボリューム削除を伴う破壊的操作**）
+- 本番イメージが必要になったら `next.config.ts` に `output: 'standalone'` を追加し、別途 multi-stage の `Dockerfile` を用意する（未作成）。
+
+## Claude Code から dev サーバを再起動する手順
+
+`package.json` / `pnpm-lock.yaml` / `next.config.ts` 等を変更したあと、走っている dev サーバを安全に作り直したい場合に使う。**TaskStop は同一セッション内のバックグラウンドタスクしか止められない** ため、別セッションから前セッションの dev を止める手段として、ポート番号ベースの停止スクリプトを用意している。
+
+仕組み:
+- `scripts/stop-dev.mjs` が `FRONTEND_PORT`（既定 3000）を LISTEN しているプロセスを OS から探して kill する。Windows は `netstat` + `taskkill /F /T`、Unix は `lsof` + `kill -TERM`。PID ファイルは持たないので、Claude Code セッションをまたいでも確実に止められる。
+- 冪等：listener が無ければ no-op で終了する。
+
+典型フロー（package.json を変更した後）:
+
+```bash
+pnpm restart
+# = pnpm stop && pnpm install && pnpm dev:full
+```
+
+- `pnpm restart` の `dev:full` は通常 fg で走るので、Claude Code から呼ぶ場合は `run_in_background: true` で投げて、ログは出力ファイル経由で読む。
+- 別セッションから止めるだけなら `pnpm stop` 単体で OK。
 
 ## 設計メモ
 

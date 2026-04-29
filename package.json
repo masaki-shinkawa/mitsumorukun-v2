@@ -4,9 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:full": "pnpm services:up && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "stop": "node scripts/stop-dev.mjs",
+    "restart": "pnpm stop && pnpm install && pnpm dev:full",
+    "services:up": "docker compose up -d",
+    "services:down": "docker compose down",
+    "services:logs": "docker compose logs -f",
+    "services:ps": "docker compose ps",
+    "services:clean": "docker compose down -v"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
