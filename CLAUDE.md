@@ -38,9 +38,10 @@ POC フェーズ。Next.js フルスタックで構築（FastAPI は使わない
 - **パッケージマネージャ**: pnpm 10
 - **DB**: PostgreSQL（Docker） + Prisma 7（driver adapter `@prisma/adapter-pg` 経由）
 - **オブジェクトストレージ**: MinIO（S3互換、Docker） + AWS SDK v3 (`@aws-sdk/client-s3`)
-- **LLM**: OpenAI API
-  - メイン処理（要件抽出・FP算出・ドラフト生成）: `gpt-4o`
-  - 軽量処理（チャンク要約など）: `gpt-4o-mini`
+- **LLM**: OpenAI API（モデルは `.env` の `OPENAI_MODEL` / `OPENAI_MODEL_LIGHT` で切替可能）
+  - 主処理 (`OPENAI_MODEL`, normal): 要件抽出・FP 算出・ドラフト生成など精度が重要な処理。MVP 既定 `gpt-5.4-mini`。
+  - 軽量処理 (`OPENAI_MODEL_LIGHT`, light): チャンク要約・トピック抽出など量重視の処理。MVP 既定 `gpt-5.4-mini`。
+  - 当面は両方とも同じモデルにしておき、必要箇所だけ後から上位モデルに差し替える運用。コード側は `lib/openai/` のヘルパで「役割名」だけ指定し、モデル文字列を直書きしない。
 
 ### ドキュメント形式の拡張性
 
