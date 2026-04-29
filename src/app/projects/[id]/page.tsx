@@ -4,7 +4,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { getProject } from "@/features/projects/api/projects-repository";
 import { ProjectDetail } from "@/features/projects/components/ProjectDetail";
 import { DeleteProjectButton } from "@/features/projects/components/DeleteProjectButton";
-import { ProjectTabs } from "@/features/projects/components/ProjectTabs";
+import { ProjectTabs } from "@/widgets/projects/ProjectTabs";
 import { listDocuments } from "@/features/documents/api/documents-repository";
 
 type Params = Promise<{ id: string }>;

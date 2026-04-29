@@ -1,9 +1,13 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DocumentUploader } from "@/features/documents/components/DocumentUploader";
-import { DocumentList } from "@/features/documents/components/DocumentList";
+import { DocumentsPanel } from "@/features/documents/components/DocumentsPanel";
 import type { DocumentMeta } from "@/features/documents/types/document";
+import { ExtractionPanel } from "@/features/extraction/components/ExtractionPanel";
+import { ProjectSettingsPanel } from "@/features/project-settings/components/ProjectSettingsPanel";
+import { EstimateRoughPanel } from "@/features/estimate-rough/components/EstimateRoughPanel";
+import { EstimateDetailPanel } from "@/features/estimate-detail/components/EstimateDetailPanel";
+import { QaPanel } from "@/features/qa/components/QaPanel";
 
 type Props = {
   projectId: string;
@@ -22,29 +26,28 @@ export function ProjectTabs({ projectId, documents }: Props) {
         <TabsTrigger value="qa">QA</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="files" className="mt-4 space-y-3">
-        <DocumentUploader projectId={projectId} />
-        <DocumentList projectId={projectId} documents={documents} />
+      <TabsContent value="files" className="mt-4">
+        <DocumentsPanel projectId={projectId} documents={documents} />
       </TabsContent>
 
       <TabsContent value="extraction" className="mt-4">
-        <p className="text-sm text-muted-foreground">要件抽出（準備中）</p>
+        <ExtractionPanel />
       </TabsContent>
 
       <TabsContent value="settings" className="mt-4">
-        <p className="text-sm text-muted-foreground">プロジェクト設定（準備中）</p>
+        <ProjectSettingsPanel />
       </TabsContent>
 
       <TabsContent value="estimate-rough" className="mt-4">
-        <p className="text-sm text-muted-foreground">概算見積もり（準備中）</p>
+        <EstimateRoughPanel />
       </TabsContent>
 
       <TabsContent value="estimate-detail" className="mt-4">
-        <p className="text-sm text-muted-foreground">詳細見積もり（準備中）</p>
+        <EstimateDetailPanel />
       </TabsContent>
 
       <TabsContent value="qa" className="mt-4">
-        <p className="text-sm text-muted-foreground">QA（準備中）</p>
+        <QaPanel />
       </TabsContent>
     </Tabs>
   );
