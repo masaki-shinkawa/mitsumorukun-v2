@@ -15,9 +15,7 @@ export function ProjectDetail({ project }: Props) {
       <div className="text-sm text-muted-foreground">
         作成: {new Date(project.createdAt).toLocaleString("ja-JP")}
       </div>
-      {project.description && (
-        <p className="text-sm whitespace-pre-wrap">{project.description}</p>
-      )}
+      {project.description && <p className="text-sm whitespace-pre-wrap">{project.description}</p>}
     </div>
   );
 }

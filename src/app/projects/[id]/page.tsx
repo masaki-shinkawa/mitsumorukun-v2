@@ -18,20 +18,14 @@ export default async function ProjectDetailPage({ params }: { params: Params }) 
   const documents = await listDocuments(id);
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 py-10 space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8 px-6 py-10">
       <div className="flex items-start justify-between gap-4">
         <ProjectDetail project={project} />
         <div className="flex gap-2">
-          <Link
-            href="/projects"
-            className={buttonVariants({ variant: "outline" })}
-          >
+          <Link href="/projects" className={buttonVariants({ variant: "outline" })}>
             一覧に戻る
           </Link>
-          <DeleteProjectButton
-            projectId={project.id}
-            projectName={project.name}
-          />
+          <DeleteProjectButton projectId={project.id} projectName={project.name} />
         </div>
       </div>
 

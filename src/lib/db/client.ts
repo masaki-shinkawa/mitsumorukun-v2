@@ -8,9 +8,7 @@ function buildConnectionString(): string {
   const host = process.env.POSTGRES_HOST ?? "localhost";
   const port = process.env.POSTGRES_PORT ?? "5432";
   if (!user || !password || !db) {
-    throw new Error(
-      "POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB が .env に設定されていません",
-    );
+    throw new Error("POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB が .env に設定されていません");
   }
   return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(
     password,
@@ -25,15 +23,11 @@ function createPrismaClient(): PrismaClient {
   const adapter = new PrismaPg({ connectionString: buildConnectionString() });
   return new PrismaClient({
     adapter,
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["query", "error", "warn"]
-        : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });
 }
 
-export const prisma: PrismaClient =
-  globalForPrisma.prisma ?? createPrismaClient();
+export const prisma: PrismaClient = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;

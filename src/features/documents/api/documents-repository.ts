@@ -25,9 +25,7 @@ function buildStorageKey(projectId: string, fileName: string): string {
   return `projects/${projectId}/${globalThis.crypto.randomUUID()}-${safeName}`;
 }
 
-export async function listDocuments(
-  projectId: string,
-): Promise<DocumentMeta[]> {
+export async function listDocuments(projectId: string): Promise<DocumentMeta[]> {
   const rows = await prisma.document.findMany({
     where: { projectId },
     orderBy: { uploadedAt: "desc" },
@@ -67,9 +65,6 @@ export async function deleteDocument(id: string): Promise<void> {
   try {
     await deleteObject(row.storageKey);
   } catch (err) {
-    console.error(
-      `[documents] failed to delete object ${row.storageKey}`,
-      err,
-    );
+    console.error(`[documents] failed to delete object ${row.storageKey}`, err);
   }
 }

@@ -6,12 +6,10 @@ import { addDocument, deleteDocument } from "./documents-repository";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-const uploadFileSchema = z.file().max(MAX_FILE_SIZE).mime([
-  "text/markdown",
-  "text/plain",
-  "text/x-markdown",
-  "application/octet-stream",
-]);
+const uploadFileSchema = z
+  .file()
+  .max(MAX_FILE_SIZE)
+  .mime(["text/markdown", "text/plain", "text/x-markdown", "application/octet-stream"]);
 
 const deleteDocumentSchema = z.object({
   projectId: z.string().uuid(),

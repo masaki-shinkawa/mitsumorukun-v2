@@ -45,9 +45,7 @@ export async function deleteProject(id: string): Promise<void> {
     where: { projectId: id },
     select: { storageKey: true },
   });
-  await Promise.allSettled(
-    documents.map((d) => deleteObject(d.storageKey)),
-  ).then((results) => {
+  await Promise.allSettled(documents.map((d) => deleteObject(d.storageKey))).then((results) => {
     for (const r of results) {
       if (r.status === "rejected") {
         console.error("[projects] failed to delete object", r.reason);

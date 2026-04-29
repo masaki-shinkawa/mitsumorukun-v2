@@ -20,9 +20,7 @@ function createClient(): S3Client {
   const accessKeyId = process.env.MINIO_ROOT_USER;
   const secretAccessKey = process.env.MINIO_ROOT_PASSWORD;
   if (!accessKeyId || !secretAccessKey) {
-    throw new Error(
-      "MINIO_ROOT_USER / MINIO_ROOT_PASSWORD が .env に設定されていません",
-    );
+    throw new Error("MINIO_ROOT_USER / MINIO_ROOT_PASSWORD が .env に設定されていません");
   }
   return new S3Client({
     endpoint: ENDPOINT,

@@ -9,19 +9,23 @@ POC フェーズ。Next.js フルスタックで構築（FastAPI は使わない
 ## プロジェクト概要
 
 ### 想定フロー
+
 プロジェクト一覧 → プロジェクト登録 → プロジェクト詳細 → RFPアップロード → 分析開始 → 要件一覧表示
 
 ### 抽出粒度
+
 - **概算**: 機能レベル（大機能 → 中機能）
 - **詳細**: 画面単位 / API単位まで分解
 
 ### MVP スコープ
+
 1. プロジェクト管理（CRUD）
 2. RFPアップロード（**Markdown のみ**、ただし将来の形式追加を見越したアーキテクチャ）
 3. 概算/詳細の要件抽出（OpenAI API）
 4. 要件一覧表示・編集・エクスポート
 
 ### 後続フェーズ
+
 - Phase 2: Google SSO 認証、ユーザー/権限管理
 - Phase 3: FP算出による見積もり、見積書ドラフト生成
 - 対応ファイル形式拡張: PDF / Word / その他
@@ -39,7 +43,9 @@ POC フェーズ。Next.js フルスタックで構築（FastAPI は使わない
   - 軽量処理（チャンク要約など）: `gpt-4o-mini`
 
 ### ドキュメント形式の拡張性
+
 RFP 取り込みは「ファイル形式 → 正規化済みテキスト/構造」へ変換する **パーサー層** を抽象化し、形式追加時はパーサー実装の追加のみで済ませる。
+
 - MVP: Markdown パーサー
 - 将来: PDF / Word / HTML 等
 
@@ -98,6 +104,7 @@ src/features/<feature-name>/
 ```
 
 想定 feature 例（MVP）:
+
 - `projects` — プロジェクト一覧/登録/詳細/編集
 - `documents` — RFP アップロード・パーサー振り分け
   - 各種パーサーは `lib/parsers/<format>/` に置き、`documents` から呼び出す
@@ -135,6 +142,7 @@ bulletproof-react の `import/no-restricted-paths` 規約に準拠する。
 **重要**: `.env` には API Token が含まれているため**閲覧禁止**。形式は `.env.example` を参照すること。
 
 主要変数:
+
 - `POSTGRES_*`: PostgreSQL 接続。`DATABASE_URL` は持たず、`prisma.config.ts` と `lib/db/client.ts` がここから組み立てる。
 - `MINIO_*`: MinIO 接続（`MINIO_BUCKET` で使用バケットを指定。初回アクセス時に自動作成）。
 - `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_MODEL_LIGHT`: OpenAI
@@ -183,6 +191,7 @@ pnpm dlx shadcn@latest add <component>     # 例: pnpm dlx shadcn@latest add car
 `package.json` / `pnpm-lock.yaml` / `next.config.ts` 等を変更したあと、走っている dev サーバを安全に作り直したい場合に使う。**TaskStop は同一セッション内のバックグラウンドタスクしか止められない** ため、別セッションから前セッションの dev を止める手段として、ポート番号ベースの停止スクリプトを用意している。
 
 仕組み:
+
 - `scripts/stop-dev.mjs` が `FRONTEND_PORT`（既定 3000）を LISTEN しているプロセスを OS から探して kill する。Windows は `netstat` + `taskkill /F /T`、Unix は `lsof` + `kill -TERM`。PID ファイルは持たないので、Claude Code セッションをまたいでも確実に止められる。
 - 冪等：listener が無ければ no-op で終了する。
 

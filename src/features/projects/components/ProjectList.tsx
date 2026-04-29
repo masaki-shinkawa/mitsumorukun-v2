@@ -1,11 +1,5 @@
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Project } from "../types/project";
 
 type Props = {
@@ -33,7 +27,7 @@ export function ProjectList({ projects }: Props) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="line-clamp-3 text-sm text-muted-foreground whitespace-pre-wrap">
+              <p className="line-clamp-3 text-sm whitespace-pre-wrap text-muted-foreground">
                 {project.description || "（説明なし）"}
               </p>
             </CardContent>

@@ -8,9 +8,7 @@ function buildDatabaseUrl(): string {
   const host = process.env.POSTGRES_HOST ?? "localhost";
   const port = process.env.POSTGRES_PORT ?? "5432";
   if (!user || !password || !db) {
-    throw new Error(
-      "POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB が .env に揃っていません",
-    );
+    throw new Error("POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB が .env に揃っていません");
   }
   return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(
     password,

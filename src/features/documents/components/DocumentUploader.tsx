@@ -25,8 +25,7 @@ export function DocumentUploader({ projectId }: Props) {
         const res = await uploadDocumentsAction(projectId, formData);
         const parts: string[] = [];
         if (res.added > 0) parts.push(`${res.added} 件アップロード`);
-        if (res.skipped.length > 0)
-          parts.push(`スキップ: ${res.skipped.join(", ")}`);
+        if (res.skipped.length > 0) parts.push(`スキップ: ${res.skipped.join(", ")}`);
         setMessage(parts.join(" / ") || "アップロード対象がありません");
       });
     },
@@ -59,20 +58,18 @@ export function DocumentUploader({ projectId }: Props) {
         }}
         onDrop={handleDrop}
         className={[
-          "block rounded-lg border-2 border-dashed p-8 text-center cursor-pointer transition-colors",
+          "block cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors",
           "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
           isDragging
             ? "border-foreground bg-muted"
             : "border-muted-foreground/30 hover:border-muted-foreground/60",
-          isPending && "opacity-60 pointer-events-none",
+          isPending && "pointer-events-none opacity-60",
         ]
           .filter(Boolean)
           .join(" ")}
       >
         <p className="text-sm">
-          {isPending
-            ? "アップロード中…"
-            : "ファイルをドラッグ＆ドロップ、またはタップして選択"}
+          {isPending ? "アップロード中…" : "ファイルをドラッグ＆ドロップ、またはタップして選択"}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
           複数ファイル対応 / 最大 20MB / MVP は Markdown 推奨
@@ -90,11 +87,7 @@ export function DocumentUploader({ projectId }: Props) {
         />
       </label>
 
-      <div
-        className="text-xs text-muted-foreground min-h-4"
-        aria-live="polite"
-        role="status"
-      >
+      <div className="min-h-4 text-xs text-muted-foreground" aria-live="polite" role="status">
         {message}
       </div>
     </div>

@@ -30,10 +30,7 @@ export function DocumentList({ projectId, documents }: Props) {
   return (
     <ul className="divide-y rounded-md border">
       {documents.map((doc) => (
-        <li
-          key={doc.id}
-          className="flex items-center justify-between gap-3 px-4 py-3"
-        >
+        <li key={doc.id} className="flex items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{doc.fileName}</p>
             <p className="text-xs text-muted-foreground">
