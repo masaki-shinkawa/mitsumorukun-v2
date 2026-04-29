@@ -66,6 +66,9 @@ Thumbs.db
 # Build artifacts
 *.tsbuildinfo
 
+# Prisma generated client
+src/generated/
+
 # Coverage reports
 coverage/
 
