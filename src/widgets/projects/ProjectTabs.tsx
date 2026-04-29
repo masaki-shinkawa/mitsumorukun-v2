@@ -31,7 +31,7 @@ export function ProjectTabs({ projectId, documents }: Props) {
       </TabsContent>
 
       <TabsContent value="extraction" className="mt-4">
-        <ExtractionPanel />
+        <ExtractionPanel projectId={projectId} />
       </TabsContent>
 
       <TabsContent value="settings" className="mt-4">

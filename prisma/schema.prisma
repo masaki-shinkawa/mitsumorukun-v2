@@ -8,12 +8,13 @@ datasource db {
 }
 
 model Project {
-  id          String     @id @default(uuid())
-  name        String
-  description String     @default("")
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  documents   Document[]
+  id             String          @id @default(uuid())
+  name           String
+  description    String          @default("")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  documents      Document[]
+  extractionRuns ExtractionRun[]
 }
 
 model Document {
@@ -27,4 +28,82 @@ model Document {
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+}
+
+enum Granularity {
+  rough
+  detail
+}
+
+enum ExtractionStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+enum RequirementCategory {
+  functional
+  non_functional
+  constraint
+  assumption
+  out_of_scope
+}
+
+enum Priority {
+  must
+  should
+  nice_to_have
+  unknown
+}
+
+enum Confidence {
+  high
+  medium
+  low
+}
+
+model ExtractionRun {
+  id               String           @id @default(uuid())
+  projectId        String
+  granularity      Granularity
+  status           ExtractionStatus @default(pending)
+  model            String
+  documentSnapshot Json
+  tokenUsage       Json?
+  errorMessage     String?
+  startedAt        DateTime         @default(now())
+  finishedAt       DateTime?
+  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requirements     Requirement[]
+
+  @@index([projectId])
+}
+
+model Requirement {
+  id                String              @id @default(uuid())
+  projectId         String
+  extractionRunId   String
+  granularity       Granularity
+  category          RequirementCategory
+  parentId          String?
+  code              String
+  title             String
+  description       String
+  inputs            String?
+  outputs           String?
+  actors            String[]
+  priority          Priority            @default(unknown)
+  confidence        Confidence
+  evidence          Json
+  supersededEvidence Json               @default("[]")
+  notes             String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  extractionRun     ExtractionRun       @relation(fields: [extractionRunId], references: [id], onDelete: Cascade)
+  parent            Requirement?        @relation("RequirementChildren", fields: [parentId], references: [id])
+  children          Requirement[]       @relation("RequirementChildren")
+
+  @@index([projectId])
+  @@index([extractionRunId])
 }
