@@ -3,8 +3,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { listProjects } from "@/features/projects/api/projects-repository";
 import { ProjectList } from "@/features/projects/components/ProjectList";
 
-export default function ProjectsPage() {
-  const projects = listProjects();
+export default async function ProjectsPage() {
+  const projects = await listProjects();
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10 space-y-6">
       <div className="flex items-center justify-between">

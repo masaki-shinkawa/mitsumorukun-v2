@@ -27,11 +27,13 @@ export async function uploadDocumentsAction(
       continue;
     }
 
-    addDocument({
+    const body = new Uint8Array(await file.arrayBuffer());
+    await addDocument({
       projectId,
       fileName: file.name,
       size: file.size,
       contentType: file.type || "application/octet-stream",
+      body,
     });
     added += 1;
   }
@@ -44,6 +46,6 @@ export async function deleteDocumentAction(input: {
   projectId: string;
   documentId: string;
 }): Promise<void> {
-  deleteDocument(input.documentId);
+  await deleteDocument(input.documentId);
   revalidatePath(`/projects/${input.projectId}`);
 }

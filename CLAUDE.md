@@ -32,8 +32,8 @@ POC フェーズ。Next.js フルスタックで構築（FastAPI は使わない
 - **言語**: TypeScript 5
 - **UI**: React 19 / Tailwind CSS v4 / shadcn/ui (style: `base-nova`, baseColor: `neutral`, icons: `lucide`)
 - **パッケージマネージャ**: pnpm 10
-- **DB**: PostgreSQL（Docker）
-- **オブジェクトストレージ**: MinIO（S3互換、Docker）
+- **DB**: PostgreSQL（Docker） + Prisma 7（driver adapter `@prisma/adapter-pg` 経由）
+- **オブジェクトストレージ**: MinIO（S3互換、Docker） + AWS SDK v3 (`@aws-sdk/client-s3`)
 - **LLM**: OpenAI API
   - メイン処理（要件抽出・FP算出・ドラフト生成）: `gpt-4o`
   - 軽量処理（チャンク要約など）: `gpt-4o-mini`
@@ -71,6 +71,11 @@ mitsumorukun2/
 │  ├─ types/               # アプリ全体で共有する型
 │  └─ utils/               # アプリ全体で共有する純粋関数ユーティリティ
 ├─ public/
+├─ prisma/
+│  ├─ schema.prisma        # Prisma スキーマ（Project / Document）
+│  └─ migrations/          # マイグレーション履歴（git 管理）
+├─ src/generated/prisma/   # Prisma 生成物（git 管理外、postinstall で再生成）
+├─ prisma.config.ts        # Prisma 7 必須の設定（POSTGRES_* から DATABASE_URL を組み立て）
 ├─ components.json         # shadcn 設定
 ├─ next.config.ts
 ├─ tsconfig.json
@@ -130,13 +135,10 @@ bulletproof-react の `import/no-restricted-paths` 規約に準拠する。
 **重要**: `.env` には API Token が含まれているため**閲覧禁止**。形式は `.env.example` を参照すること。
 
 主要変数:
-- `POSTGRES_*`: PostgreSQL 接続
-- `MINIO_*`: MinIO 接続
+- `POSTGRES_*`: PostgreSQL 接続。`DATABASE_URL` は持たず、`prisma.config.ts` と `lib/db/client.ts` がここから組み立てる。
+- `MINIO_*`: MinIO 接続（`MINIO_BUCKET` で使用バケットを指定。初回アクセス時に自動作成）。
 - `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_MODEL_LIGHT`: OpenAI
 - `FRONTEND_PORT` (3000): Next.js
-- `NEXT_PUBLIC_API_URL`: ブラウザ → API ベースURL
-
-`BACKEND_PORT` は FastAPI 廃止に伴い未使用（後で .env.example から削除予定）。
 
 ## 開発コマンド
 
@@ -156,6 +158,11 @@ pnpm services:down      # 停止
 pnpm services:logs      # ログ追従
 pnpm services:ps        # 状態確認
 pnpm services:clean     # 停止 + ボリューム削除（破壊的）
+
+# Prisma
+pnpm db:migrate         # マイグレーション作成 + 適用（dev）
+pnpm db:generate        # Prisma Client 再生成（postinstall でも自動実行）
+pnpm db:studio          # Prisma Studio（GUI でテーブル閲覧）
 
 # shadcn コンポーネント追加
 pnpm dlx shadcn@latest add <component>     # 例: pnpm dlx shadcn@latest add card input
@@ -195,7 +202,8 @@ pnpm restart
 - ユーザーは社内チーム共有を想定するため、Phase 2 で Google SSO を導入する設計余地を残す（プロジェクト/要件にオーナー列を持たせる等）。
 - 抽出根拠（原文の引用箇所）を要件レコードに保持し、後で監査可能にする。
 - 大規模ドキュメントはチャンク分割 → `gpt-4o-mini` で要約 → `gpt-4o` で構造化抽出、の二段構成。
-- **POC のデータ層**: Postgres / MinIO 接続前は、`features/*/api/*-repository.ts` にプロセスメモリ Map を置く。後で同インタフェースのまま DB アダプタへ差し替える（プロセス再起動でデータ消失する点に注意）。
+- **データ層**: `features/*/api/*-repository.ts` から `lib/db/client.ts`（Prisma シングルトン）と `lib/storage/client.ts`（MinIO）を呼ぶ。リポジトリ関数は async。Project / Document メタは Postgres、ドキュメント本体は MinIO の `MINIO_BUCKET` バケットに `projects/<projectId>/<uuid>-<safeFileName>` で保存。Document 削除時は DB → MinIO の順で消し、MinIO 失敗はログのみ（DB を真実とみなす）。
+- **Prisma 7 構成上の注意**: `url` を `schema.prisma` に書けないので `prisma.config.ts` 必須。`prisma.config.ts` 側で `POSTGRES_*` から `DATABASE_URL` を組み立てている（`.env` に `DATABASE_URL` を別途持たない方針）。`PrismaClient` には `@prisma/adapter-pg` を必ず渡す（adapter なしでは動かない）。Prisma Client の出力先は `src/generated/prisma`（gitignore 済み、`postinstall` で自動生成）。
 - **shadcn Button の `asChild` 非対応**: 現在の base-nova スタイルは `@base-ui/react/button` ベースで `asChild` プロパティを持たない。ボタンとして表示したいリンクは `<Link className={buttonVariants({ variant: ... })}>` パターンで対応する。
 
 ## ドキュメント運用ルール（Claude 向け）

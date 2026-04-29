@@ -11,10 +11,10 @@ type Params = Promise<{ id: string }>;
 
 export default async function ProjectDetailPage({ params }: { params: Params }) {
   const { id } = await params;
-  const project = getProject(id);
+  const project = await getProject(id);
   if (!project) notFound();
 
-  const documents = listDocuments(id);
+  const documents = await listDocuments(id);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-10 space-y-8">

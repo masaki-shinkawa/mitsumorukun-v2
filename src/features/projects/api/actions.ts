@@ -12,7 +12,7 @@ export async function createProjectAction(formData: FormData): Promise<void> {
     throw new Error("案件名は必須です");
   }
 
-  const project = createProject({ name, description });
+  const project = await createProject({ name, description });
   revalidatePath("/projects");
   redirect(`/projects/${project.id}`);
 }
