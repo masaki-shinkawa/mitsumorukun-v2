@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/client";
+import { deleteObject } from "@/lib/storage/client";
 import type { Project } from "../types/project";
 
 function toProject(row: {
@@ -37,4 +38,21 @@ export async function createProject(input: {
     data: { name: input.name, description: input.description },
   });
   return toProject(row);
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  const documents = await prisma.document.findMany({
+    where: { projectId: id },
+    select: { storageKey: true },
+  });
+  await Promise.allSettled(
+    documents.map((d) => deleteObject(d.storageKey)),
+  ).then((results) => {
+    for (const r of results) {
+      if (r.status === "rejected") {
+        console.error("[projects] failed to delete object", r.reason);
+      }
+    }
+  });
+  await prisma.project.delete({ where: { id } });
 }

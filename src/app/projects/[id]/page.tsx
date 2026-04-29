@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
 import { getProject } from "@/features/projects/api/projects-repository";
 import { ProjectDetail } from "@/features/projects/components/ProjectDetail";
+import { DeleteProjectButton } from "@/features/projects/components/DeleteProjectButton";
 import { listDocuments } from "@/features/documents/api/documents-repository";
 import { DocumentUploader } from "@/features/documents/components/DocumentUploader";
 import { DocumentList } from "@/features/documents/components/DocumentList";
@@ -20,9 +21,18 @@ export default async function ProjectDetailPage({ params }: { params: Params }) 
     <div className="mx-auto w-full max-w-5xl px-6 py-10 space-y-8">
       <div className="flex items-start justify-between gap-4">
         <ProjectDetail project={project} />
-        <Link href="/projects" className={buttonVariants({ variant: "outline" })}>
-          一覧に戻る
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/projects"
+            className={buttonVariants({ variant: "outline" })}
+          >
+            一覧に戻る
+          </Link>
+          <DeleteProjectButton
+            projectId={project.id}
+            projectName={project.name}
+          />
+        </div>
       </div>
 
       <section className="space-y-3">
