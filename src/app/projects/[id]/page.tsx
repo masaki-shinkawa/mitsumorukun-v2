@@ -4,9 +4,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { getProject } from "@/features/projects/api/projects-repository";
 import { ProjectDetail } from "@/features/projects/components/ProjectDetail";
 import { DeleteProjectButton } from "@/features/projects/components/DeleteProjectButton";
+import { ProjectTabs } from "@/features/projects/components/ProjectTabs";
 import { listDocuments } from "@/features/documents/api/documents-repository";
-import { DocumentUploader } from "@/features/documents/components/DocumentUploader";
-import { DocumentList } from "@/features/documents/components/DocumentList";
 
 type Params = Promise<{ id: string }>;
 
@@ -29,11 +28,7 @@ export default async function ProjectDetailPage({ params }: { params: Params }) 
         </div>
       </div>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">RFP / 関連資料</h2>
-        <DocumentUploader projectId={project.id} />
-        <DocumentList projectId={project.id} documents={documents} />
-      </section>
+      <ProjectTabs projectId={project.id} documents={documents} />
     </div>
   );
 }
