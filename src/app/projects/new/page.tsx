@@ -4,7 +4,7 @@ import { ProjectForm } from "@/features/projects/components/ProjectForm";
 
 export default function NewProjectPage() {
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 py-10 space-y-6">
+    <div className="mx-auto w-full max-w-5xl px-6 py-10 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">新規案件</h1>

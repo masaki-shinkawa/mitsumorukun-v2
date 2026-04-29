@@ -205,6 +205,7 @@ pnpm restart
 - **データ層**: `features/*/api/*-repository.ts` から `lib/db/client.ts`（Prisma シングルトン）と `lib/storage/client.ts`（MinIO）を呼ぶ。リポジトリ関数は async。Project / Document メタは Postgres、ドキュメント本体は MinIO の `MINIO_BUCKET` バケットに `projects/<projectId>/<uuid>-<safeFileName>` で保存。Document 削除時は DB → MinIO の順で消し、MinIO 失敗はログのみ（DB を真実とみなす）。
 - **Prisma 7 構成上の注意**: `url` を `schema.prisma` に書けないので `prisma.config.ts` 必須。`prisma.config.ts` 側で `POSTGRES_*` から `DATABASE_URL` を組み立てている（`.env` に `DATABASE_URL` を別途持たない方針）。`PrismaClient` には `@prisma/adapter-pg` を必ず渡す（adapter なしでは動かない）。Prisma Client の出力先は `src/generated/prisma`（gitignore 済み、`postinstall` で自動生成）。
 - **shadcn Button の `asChild` 非対応**: 現在の base-nova スタイルは `@base-ui/react/button` ベースで `asChild` プロパティを持たない。ボタンとして表示したいリンクは `<Link className={buttonVariants({ variant: ... })}>` パターンで対応する。
+- **ページ横幅**: `app/` 配下の各ページコンテナは `mx-auto w-full max-w-5xl px-6 py-10`（= 1024px 上限）で統一する。ページごとに `max-w-2xl` / `max-w-6xl` 等のバラつきを生まないこと。任意値 `max-w-[1024px]` ではなくデフォルトトークン `max-w-5xl` を使う。
 
 ## ドキュメント運用ルール（Claude 向け）
 
