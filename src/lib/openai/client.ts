@@ -4,6 +4,8 @@ const globalForOpenAI = globalThis as unknown as { openai: OpenAI | undefined };
 
 export const openai: OpenAI = globalForOpenAI.openai ?? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  maxRetries: 0,
+  timeout: 120_000,
 });
 
 if (process.env.NODE_ENV !== "production") {
