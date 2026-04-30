@@ -74,21 +74,32 @@ export async function runExtractionJob(input: ExtractionJobInput): Promise<void>
       ],
     });
 
-    const rawContent = response.choices[0]?.message?.content ?? "{}";
+    const choice = response.choices[0];
+    const rawContent = choice?.message?.content ?? "{}";
+    const finishReason = choice?.finish_reason;
     const tokenUsage = {
       inputTokens: response.usage?.prompt_tokens ?? 0,
       outputTokens: response.usage?.completion_tokens ?? 0,
       totalTokens: response.usage?.total_tokens ?? 0,
     };
 
+    if (finishReason === "length") {
+      throw new Error(
+        `token_limit_exceeded: LLM output was truncated (finish_reason=length). ` +
+        `total_tokens=${tokenUsage.totalTokens}. ` +
+        `ドキュメントが大きすぎます。分割してから再実行してください。`,
+      );
+    }
+
     // Step 3: parse and validate
     let parsed: ReturnType<typeof llmOutputSchema.parse>;
     try {
       parsed = llmOutputSchema.parse(JSON.parse(rawContent));
-    } catch {
-      const raw = rawContent.slice(0, 2000);
+    } catch (zodErr) {
+      const raw = rawContent.slice(0, 1000);
+      const detail = zodErr instanceof Error ? zodErr.message : String(zodErr);
       throw new Error(
-        `schema_validation_error: LLM output did not match expected schema. Raw: ${raw}`,
+        `schema_validation_error: ${detail} --- Raw (first 1000 chars): ${raw}`,
       );
     }
 

@@ -27,17 +27,17 @@ export type Evidence = z.infer<typeof evidenceSchema>;
 
 export const requirementOutputSchema = z.object({
   category: z.enum(["functional", "non_functional", "constraint", "assumption", "out_of_scope"]),
-  parentTitle: z.string().optional(),
+  parentTitle: z.string().nullish().transform((v) => v ?? undefined),
   title: z.string(),
   description: z.string(),
-  inputs: z.string().optional(),
-  outputs: z.string().optional(),
-  actors: z.array(z.string()),
+  inputs: z.string().nullish().transform((v) => v ?? undefined),
+  outputs: z.string().nullish().transform((v) => v ?? undefined),
+  actors: z.array(z.string()).default([]),
   priority: z.enum(["must", "should", "nice_to_have", "unknown"]).default("unknown"),
-  confidence: z.enum(["high", "medium", "low"]),
-  evidence: z.array(evidenceSchema),
+  confidence: z.enum(["high", "medium", "low"]).default("medium"),
+  evidence: z.array(evidenceSchema).default([]),
   supersededEvidence: z.array(evidenceSchema).default([]),
-  notes: z.string().optional(),
+  notes: z.string().nullish().transform((v) => v ?? undefined),
 });
 
 export type RequirementOutput = z.infer<typeof requirementOutputSchema>;
