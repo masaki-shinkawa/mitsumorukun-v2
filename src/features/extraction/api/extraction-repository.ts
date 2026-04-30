@@ -103,14 +103,6 @@ export async function saveRequirements(
   granularity: Granularity,
   items: RequirementOutput[],
 ): Promise<void> {
-  // delete previous requirements for this project+granularity
-  await prisma.requirement.deleteMany({
-    where: {
-      projectId,
-      granularity,
-    },
-  });
-
   // assign codes per category
   const counters: Record<string, number> = {};
   function nextCode(category: string): string {
@@ -182,8 +174,10 @@ export async function getRequirements(
   projectId: string,
   granularity: Granularity,
 ): Promise<Requirement[]> {
+  const latestRun = await getLatestExtractionRun(projectId, granularity);
+  if (!latestRun) return [];
   return prisma.requirement.findMany({
-    where: { projectId, granularity },
+    where: { projectId, granularity, extractionRunId: latestRun.id },
     orderBy: [{ category: "asc" }, { code: "asc" }],
   });
 }
