@@ -1,7 +1,4 @@
-"use server";
-
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db/client";
 import { getModel } from "@/lib/openai/client";
 import {
@@ -21,7 +18,7 @@ export type StartExtractionResult =
   | { ok: true; runId: string }
   | { ok: false; error: string };
 
-export async function startExtractionAction(
+export async function startExtraction(
   projectId: string,
   granularity: Granularity,
 ): Promise<StartExtractionResult> {
@@ -30,16 +27,13 @@ export async function startExtractionAction(
     return { ok: false, error: "無効なパラメータです" };
   }
 
-  // clean up stale running jobs first
   await abandonStaleRuns(projectId, granularity);
 
-  // check for active running job
   const alreadyRunning = await hasRunningExtractionRun(projectId, granularity);
   if (alreadyRunning) {
     return { ok: false, error: "既に抽出ジョブが実行中です。完了後に再実行してください。" };
   }
 
-  // fetch documents
   const documents = await prisma.document.findMany({
     where: { projectId },
     orderBy: { uploadedAt: "asc" },
@@ -84,7 +78,6 @@ export async function startExtractionAction(
     documentSnapshot,
   });
 
-  // run synchronously (MVP — no job queue)
   try {
     await runExtractionJob({
       runId: run.id,
@@ -96,7 +89,5 @@ export async function startExtractionAction(
     // error is already persisted in the run record
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { ok: true, runId: run.id };
 }
-

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { listExtractionRuns, getRequirements } from "@/features/extraction/api/extraction-repository";
-import { startExtractionAction } from "@/features/extraction/api/actions";
+import { startExtraction } from "@/features/extraction/api/extraction-service";
 import type { Granularity } from "@/generated/prisma/enums";
 
 const paramsSchema = z.object({ projectId: z.string().uuid() });
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const body = await req.json();
   const granularity = granularitySchema.parse(body.granularity);
 
-  const result = await startExtractionAction(projectId, granularity as Granularity);
+  const result = await startExtraction(projectId, granularity as Granularity);
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });
