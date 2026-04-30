@@ -256,13 +256,38 @@ export function ExtractionPanel({ projectId }: Props) {
 
   const mutation = useMutation({
     mutationFn: (granularity: Granularity) => startExtraction(projectId, granularity),
+    onMutate: (granularity) => {
+      // optimistically mark the run as running so the UI reflects it immediately,
+      // even if the user navigates away and comes back before the request finishes
+      queryClient.setQueryData<ExtractionData>(["extraction", projectId, granularity], (prev) => {
+        const optimisticRun: ExtractionRun = {
+          id: "__optimistic__",
+          projectId,
+          granularity,
+          status: "running",
+          model: "",
+          documentSnapshot: {},
+          tokenUsage: null,
+          errorMessage: null,
+          startedAt: new Date(),
+          finishedAt: null,
+        };
+        return {
+          runs: [optimisticRun, ...(prev?.runs ?? [])],
+          requirements: prev?.requirements ?? [],
+        };
+      });
+    },
     onSuccess: (result, granularity) => {
-      // update both runs and requirements for the executed granularity
       queryClient.setQueryData(["extraction", projectId, granularity], {
         runs: result.runs,
         requirements: result.requirements,
       });
       setActiveGranularity(granularity);
+    },
+    onError: (_err, granularity) => {
+      // remove the optimistic run on error so stale "running" doesn't linger
+      queryClient.invalidateQueries({ queryKey: ["extraction", projectId, granularity] });
     },
   });
 
@@ -278,17 +303,26 @@ export function ExtractionPanel({ projectId }: Props) {
   const requirements = data?.requirements ?? [];
   const latestRun = runs.find((r) => r.granularity === activeGranularity);
   const latestFailed = latestRun?.status === "failed" ? latestRun : null;
-  const isRunning = mutation.isPending;
+
+  // disabled when mutation is in-flight OR when DB already has a running job
+  // (the latter catches the "navigated away and came back" case via optimistic cache)
+  const isRoughRunning =
+    (mutation.isPending && mutation.variables === "rough") ||
+    runs.some((r) => r.granularity === "rough" && r.status === "running");
+  const isDetailRunning =
+    (mutation.isPending && mutation.variables === "detail") ||
+    runs.some((r) => r.granularity === "detail" && r.status === "running");
+  const isRunning = isRoughRunning || isDetailRunning;
 
   return (
     <div className="space-y-4">
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
         <Button variant="default" disabled={isRunning} onClick={() => handleStart("rough")}>
-          {isRunning && mutation.variables === "rough" ? "実行中…" : "概算抽出を実行"}
+          {isRoughRunning ? "実行中…" : "概算抽出を実行"}
         </Button>
         <Button variant="outline" disabled={isRunning} onClick={() => handleStart("detail")}>
-          {isRunning && mutation.variables === "detail" ? "実行中…" : "詳細抽出を実行"}
+          {isDetailRunning ? "実行中…" : "詳細抽出を実行"}
         </Button>
       </div>
 
