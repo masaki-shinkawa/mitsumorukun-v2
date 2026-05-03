@@ -2,10 +2,6 @@ import { openai, getModel } from "@/lib/openai/client";
 import { getObject } from "@/lib/storage/client";
 import { parseMarkdownChunks, chunksToSummaryInput } from "@/lib/parsers/markdown";
 import {
-  ROUGH_SYSTEM_PROMPT,
-  ROUGH_USER_TEMPLATE,
-} from "@/lib/openai/prompts/extraction/rough";
-import {
   DETAIL_SYSTEM_PROMPT,
   DETAIL_USER_TEMPLATE,
 } from "@/lib/openai/prompts/extraction/detail";
@@ -14,7 +10,6 @@ import {
   updateExtractionRunStatus,
   saveRequirements,
 } from "./extraction-repository";
-import type { Granularity } from "@/generated/prisma/enums";
 
 type DocumentInput = {
   id: string;
@@ -26,13 +21,12 @@ type DocumentInput = {
 export type ExtractionJobInput = {
   runId: string;
   projectId: string;
-  granularity: Granularity;
   documents: DocumentInput[];
   projectContext?: string;
 };
 
 export async function runExtractionJob(input: ExtractionJobInput): Promise<void> {
-  const { runId, projectId, granularity, documents, projectContext = "" } = input;
+  const { runId, projectId, documents, projectContext = "" } = input;
 
   await updateExtractionRunStatus(runId, "running");
 
@@ -55,12 +49,8 @@ export async function runExtractionJob(input: ExtractionJobInput): Promise<void>
     const documentsText = allChunkTexts.join("\n\n===FILE BOUNDARY===\n\n");
 
     // Step 2: LLM extraction
-    const systemPrompt =
-      granularity === "rough" ? ROUGH_SYSTEM_PROMPT : DETAIL_SYSTEM_PROMPT;
-    const userPrompt =
-      granularity === "rough"
-        ? ROUGH_USER_TEMPLATE(documentsText, projectContext)
-        : DETAIL_USER_TEMPLATE(documentsText, projectContext);
+    const systemPrompt = DETAIL_SYSTEM_PROMPT;
+    const userPrompt = DETAIL_USER_TEMPLATE(documentsText, projectContext);
 
     const model = getModel("normal");
 
@@ -115,7 +105,7 @@ export async function runExtractionJob(input: ExtractionJobInput): Promise<void>
       }
     }
 
-    await saveRequirements(runId, projectId, granularity, parsed.requirements);
+    await saveRequirements(runId, projectId, parsed.requirements);
 
     await updateExtractionRunStatus(runId, "completed", {
       tokenUsage,

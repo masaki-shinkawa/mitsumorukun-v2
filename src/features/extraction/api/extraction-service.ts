@@ -7,11 +7,9 @@ import {
   abandonStaleRuns,
 } from "./extraction-repository";
 import { runExtractionJob } from "./extraction-job";
-import type { Granularity } from "@/generated/prisma/enums";
 
 const startSchema = z.object({
   projectId: z.string().uuid(),
-  granularity: z.enum(["rough", "detail"]),
 });
 
 export type StartExtractionResult =
@@ -20,16 +18,15 @@ export type StartExtractionResult =
 
 export async function startExtraction(
   projectId: string,
-  granularity: Granularity,
 ): Promise<StartExtractionResult> {
-  const parsed = startSchema.safeParse({ projectId, granularity });
+  const parsed = startSchema.safeParse({ projectId });
   if (!parsed.success) {
     return { ok: false, error: "無効なパラメータです" };
   }
 
-  await abandonStaleRuns(projectId, granularity);
+  await abandonStaleRuns(projectId);
 
-  const alreadyRunning = await hasRunningExtractionRun(projectId, granularity);
+  const alreadyRunning = await hasRunningExtractionRun(projectId);
   if (alreadyRunning) {
     return { ok: false, error: "既に抽出ジョブが実行中です。完了後に再実行してください。" };
   }
@@ -73,7 +70,6 @@ export async function startExtraction(
 
   const run = await createExtractionRun({
     projectId,
-    granularity,
     model,
     documentSnapshot,
   });
@@ -82,7 +78,6 @@ export async function startExtraction(
     await runExtractionJob({
       runId: run.id,
       projectId,
-      granularity,
       documents: mdDocuments,
     });
   } catch {

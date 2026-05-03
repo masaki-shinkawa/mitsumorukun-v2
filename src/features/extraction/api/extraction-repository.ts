@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/client";
-import type { Granularity, ExtractionStatus } from "@/generated/prisma/enums";
+import type { ExtractionStatus } from "@/generated/prisma/enums";
 import type { ExtractionRun, Requirement } from "@/generated/prisma/client";
 import type { Evidence, RequirementOutput } from "./schemas";
 
@@ -7,14 +7,12 @@ export type { ExtractionRun, Requirement };
 
 export async function createExtractionRun(input: {
   projectId: string;
-  granularity: Granularity;
   model: string;
   documentSnapshot: object;
 }): Promise<ExtractionRun> {
   return prisma.extractionRun.create({
     data: {
       projectId: input.projectId,
-      granularity: input.granularity,
       model: input.model,
       documentSnapshot: input.documentSnapshot,
       status: "pending",
@@ -47,20 +45,18 @@ export async function listExtractionRuns(projectId: string): Promise<ExtractionR
 
 export async function getLatestExtractionRun(
   projectId: string,
-  granularity: Granularity,
 ): Promise<ExtractionRun | null> {
   return prisma.extractionRun.findFirst({
-    where: { projectId, granularity, status: "completed" },
+    where: { projectId, status: "completed" },
     orderBy: { startedAt: "desc" },
   });
 }
 
 export async function hasRunningExtractionRun(
   projectId: string,
-  granularity: Granularity,
 ): Promise<boolean> {
   const run = await prisma.extractionRun.findFirst({
-    where: { projectId, granularity, status: "running" },
+    where: { projectId, status: "running" },
     select: { id: true },
   });
   return run !== null;
@@ -69,14 +65,12 @@ export async function hasRunningExtractionRun(
 /** Abandon stale running jobs (started > timeoutMs ago) */
 export async function abandonStaleRuns(
   projectId: string,
-  granularity: Granularity,
   timeoutMs = 10 * 60 * 1000,
 ): Promise<void> {
   const cutoff = new Date(Date.now() - timeoutMs);
   await prisma.extractionRun.updateMany({
     where: {
       projectId,
-      granularity,
       status: "running",
       startedAt: { lt: cutoff },
     },
@@ -100,7 +94,6 @@ const CATEGORY_PREFIX: CategoryPrefixMap = {
 export async function saveRequirements(
   runId: string,
   projectId: string,
-  granularity: Granularity,
   items: RequirementOutput[],
 ): Promise<void> {
   // assign codes per category
@@ -124,7 +117,6 @@ export async function saveRequirements(
       data: {
         projectId,
         extractionRunId: runId,
-        granularity,
         category: req.category,
         parentId: null,
         code,
@@ -150,7 +142,6 @@ export async function saveRequirements(
       data: {
         projectId,
         extractionRunId: runId,
-        granularity,
         category: req.category,
         parentId,
         code,
@@ -172,12 +163,11 @@ export async function saveRequirements(
 
 export async function getRequirements(
   projectId: string,
-  granularity: Granularity,
 ): Promise<Requirement[]> {
-  const latestRun = await getLatestExtractionRun(projectId, granularity);
+  const latestRun = await getLatestExtractionRun(projectId);
   if (!latestRun) return [];
   return prisma.requirement.findMany({
-    where: { projectId, granularity, extractionRunId: latestRun.id },
+    where: { projectId, extractionRunId: latestRun.id },
     orderBy: [{ category: "asc" }, { code: "asc" }],
   });
 }
